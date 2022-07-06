@@ -10,7 +10,6 @@ export class GachaController {
         this.init();
     }
 
-    // @log
     @Get('doctors')
     async doctors(){
         return this.service.doctors();
