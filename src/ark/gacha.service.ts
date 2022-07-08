@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { isNull, isUndefined } from 'lodash';
+import { isNull } from 'lodash';
 import { Model } from 'mongoose';
 import ArkHypergryphCom from './ak.hypergryph.com';
 import {
@@ -27,7 +27,7 @@ export class GachaService {
   }
   async register(token: string): Promise<Doctor> {
     const doc = await ArkHypergryphCom.basic(token);
-    if (!isUndefined(doc)) {
+    if (!isNull(doc)) {
       const { uid } = doc;
       const dib = await this.doctorModel.findOne({ uid }).exec();
       doc.token = token;
@@ -52,15 +52,22 @@ export class GachaService {
     const ans = await this.doctorModel.find({}, projection).exec();
     return ans;
   }
+  invalid: Set<string> = new Set();
   async update(doctor: Doctor, bre = true) {
-    const { token, channelMasterId, uid } = doctor;
+    const { token, channelMasterId, uid, nickName } = doctor;
+    this.invalid.delete(nickName);
     const docNet = await ArkHypergryphCom.basic(token, channelMasterId);
-
     // Logger.log(
     //   `${JSON.stringify(docNet)} update`,
     //   `${this.constructor.name} ${this.update.name}`,
     // );
     if (docNet) {
+      if (docNet.nickName !== nickName) {
+        await this.doctorModel
+          .updateOne({ uid }, { nickName: docNet.nickName })
+          .exec();
+        Logger.log(`${nickName} => ${docNet.nickName}`, 'update,nickName');
+      }
       const cur = ArkHypergryphCom.gachaCursor(token, channelMasterId);
       const waitInsert = [];
       for await (const gacha of cur) {
@@ -81,6 +88,9 @@ export class GachaService {
           `${this.constructor.name} ${this.update.name}`,
         );
       }
+      return waitInsert.length;
+    } else {
+      this.invalid.add(nickName);
     }
     return -1;
   }

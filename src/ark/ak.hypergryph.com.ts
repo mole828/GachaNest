@@ -46,6 +46,7 @@ export default class ArkHypergryphCom {
         return data;
       } catch (e) {}
     }
+    return null;
   }
   static async gacha(
     token: string,

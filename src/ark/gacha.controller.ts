@@ -80,6 +80,6 @@ export class GachaController {
   }
   @Get('doc.invalid')
   async invalid() {
-    return ['鸽了'];
+    return [...this.service.invalid.values()];
   }
 }
