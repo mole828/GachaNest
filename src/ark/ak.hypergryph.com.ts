@@ -1,22 +1,10 @@
 import { Logger } from '@nestjs/common';
-import axios from 'axios';
-import _ from 'lodash';
+import axios, { AxiosError } from 'axios';
+import { range } from 'lodash';
 import { log } from '../util/log';
-import { Doctor } from './schemas/doctor.schema';
+import { Doctor, Gacha } from './schemas/ark.schema';
 
 const arkhost = 'https://as.hypergryph.com';
-
-export interface Char {
-  name: string;
-  rarity: number;
-  isNew: boolean;
-}
-
-export interface Gacha {
-  ts: number;
-  pool: number;
-  chars: Array<Char>;
-}
 
 export interface Pagination {
   current: number;
@@ -29,34 +17,36 @@ interface GachaPage {
 }
 
 export default class ArkHypergryphCom {
-  @log
-  static async basic(token: string): Promise<Doctor> {
-    try {
-      // main
-      const response = await axios.post(`${arkhost}/u8/user/info/v1/basic`, {
-        appId: 1,
-        channelMasterId: 1,
-        channelToken: {
+  static async basic(token: string, channelId = 0): Promise<Doctor> {
+    if (channelId !== 2) {
+      try {
+        // main
+        const response = await axios.post(`${arkhost}/u8/user/info/v1/basic`, {
+          appId: 1,
+          channelMasterId: 1,
+          channelToken: {
+            token,
+          },
+        });
+        const { status, msg } = response.data;
+        if (status !== 0) throw msg;
+        const data: Doctor = response.data.data;
+        return data;
+      } catch (e) {}
+    }
+    if (channelId !== 1) {
+      try {
+        // bili
+        const response = await axios.post(`${arkhost}/u8/user/info/v1/basic`, {
           token,
-        },
-      });
-      const { status, msg } = response.data;
-      if (status !== 0) throw msg;
-      const data: Doctor = response.data.data;
-      return data;
-    } catch (e) {}
-    try {
-      // bili
-      const response = await axios.post(`${arkhost}/u8/user/info/v1/basic`, {
-        token,
-      });
-      const { status, msg } = response.data;
-      if (status !== 0) throw msg;
-      const data: Doctor = response.data.data;
-      return data;
-    } catch (e) {}
+        });
+        const { status, msg } = response.data;
+        if (status !== 0) throw msg;
+        const data: Doctor = response.data.data;
+        return data;
+      } catch (e) {}
+    }
   }
-  @log
   static async gacha(
     token: string,
     channelId = 1,
@@ -78,9 +68,8 @@ export default class ArkHypergryphCom {
     Logger.error(JSON.stringify(body), 'gacha body');
     return new Promise(() => []);
   }
-  @log
   static async *gachaCursor(token: string, channelId: number) {
-    for (const page of _.range(1, 11)) {
+    for (const page of range(1, 11)) {
       const gp: GachaPage = await this.gacha(token, channelId, page);
       for (const gacha of gp.list) {
         yield gacha;
@@ -89,7 +78,9 @@ export default class ArkHypergryphCom {
     }
   }
 }
-
+/*
+{"code":0,"data":{"content":"qAA4V/0Q6KcVDLZrvb5p1dPIv0jR6Q8xDJQW5sFbwtQJfZj+uoxnMGjrVrJcNze9AvQG9elOPMmsTqM1Rcd3Bj/x0lRqUXXfKs/As2cAsqT8kC+sSQxXqIP/qrzIxpPeuC/UlwHLE2SxtdRikGGVkSGroCVknswk6iTaCGeYGkR8ZcELSchtFvEKZ/8cX2NDhYzo/3SAiIhi"},"msg":""}
+*/
 if (require.main === module) {
   (async function () {
     const token =
@@ -97,7 +88,7 @@ if (require.main === module) {
     const service = ArkHypergryphCom;
     const userInfo = await service.basic(token);
     console.log(userInfo);
-    // Logger.log( (await service.gacha(token)).list[0].chars[0] )
+    //Logger.log( (await service.gacha(token)).list[0].chars[0] )
     for await (const gacha of service.gachaCursor(
       token,
       userInfo.channelMasterId,
