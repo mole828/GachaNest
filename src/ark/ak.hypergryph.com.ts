@@ -1,7 +1,6 @@
 import { Logger } from '@nestjs/common';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { range } from 'lodash';
-import { log } from '../util/log';
 import { Doctor, Gacha } from './schemas/ark.schema';
 
 const arkhost = 'https://as.hypergryph.com';
@@ -53,20 +52,24 @@ export default class ArkHypergryphCom {
     channelId = 1,
     page = 1,
   ): Promise<GachaPage> {
-    const response = await axios.get(
-      'https://ak.hypergryph.com/user/api/inquiry/gacha',
-      {
-        params: {
-          page,
-          token,
-          channelId,
+    try {
+      const response = await axios.get(
+        'https://ak.hypergryph.com/user/api/inquiry/gacha',
+        {
+          params: {
+            page,
+            token,
+            channelId,
+          },
         },
-      },
-    );
-    const body = response.data;
-    const { code, data, msg } = body;
-    if (code === 0) return data;
-    Logger.error(JSON.stringify(body), 'gacha body');
+      );
+      const body = response.data;
+      const { code, data } = body;
+      if (code === 0) return data;
+    } catch (e) {
+      const logInfo = { token, channelId, page, e };
+      Logger.error(JSON.stringify(logInfo), this.name);
+    }
     return new Promise(() => []);
   }
   static async *gachaCursor(token: string, channelId: number) {
@@ -94,7 +97,7 @@ if (require.main === module) {
       token,
       userInfo.channelMasterId,
     )) {
-      // console.log(gacha);
+      console.log(gacha);
     }
   })();
 }

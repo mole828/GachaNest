@@ -13,14 +13,19 @@ export class GachaUpdateService {
   }
   @Cron('0 */20 * * * *')
   async update() {
-    const doctors = await this.service.doctors();
-    Logger.log(
-      `${doctors.length} need to update`,
-      `${this.constructor.name} update gacha`,
-    );
-    for (const doctor of doctors) {
-      await sleep(15 * 1000);
-      this.service.update(doctor);
+    try {
+      const doctors = await this.service.doctors();
+      for (const doctor of doctors) {
+        await sleep(15 * 1000);
+        this.service.update(doctor);
+      }
+    } catch (e) {
+      Logger.error(e, this.constructor.name);
     }
+
+    // Logger.log(
+    //   `${doctors.length} need to update`,
+    //   `${this.constructor.name} update gacha`,
+    // );
   }
 }
