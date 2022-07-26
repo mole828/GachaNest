@@ -142,6 +142,6 @@ export class GachaService {
       this.statisticOne(gacha);
       gacha = await cur.next();
     }
-    Logger.log(JSON.stringify(await this.statistic('')), 'stringify');
+    Logger.log(JSON.stringify(await this.statistic('')), 'initStatistics');
   }
 }

@@ -9,7 +9,7 @@ import {
   Req,
   Request,
 } from '@nestjs/common';
-import { isUndefined, sum } from 'lodash';
+import { isNull, isUndefined, sum } from 'lodash';
 import { GachaService } from './gacha.service';
 
 @Controller('ark')
@@ -18,22 +18,35 @@ export class GachaController {
 
   @Post('register')
   async register(@Query('token') token: string) {
-    Logger.log(token, this.register.name);
+    Logger.log(JSON.stringify({ sub: token }), this.register.name);
     try {
-      const { channelToken } = JSON.parse(token);
-      token = channelToken.token;
-      Logger.log(token, '/v1/token_by_cookie');
-    } catch {}
-    try {
-      const { data } = JSON.parse(token);
-      token = data.content;
-      Logger.log(token, 'hg,ak-b');
-    } catch {}
+      const obj = JSON.parse(token);
+      Logger.log(JSON.stringify({ obj }), this.register.name);
+      {
+        const { data } = obj;
+        //Logger.log(JSON.stringify({ data }), this.register.name);
+        const { token: newToken } = data;
+        //Logger.log(JSON.stringify({ newToken }), this.register.name);
+        if (newToken) {
+          token = newToken;
+        }
+      }
+      {
+        const { data } = obj;
+        //Logger.log(JSON.stringify({ data }), this.register.name);
+        const { content } = data;
+        //Logger.log(JSON.stringify({ content }), this.register.name);
+        if (content) {
+          token = content;
+        }
+      }
+    } catch (e) {}
+    Logger.log(JSON.stringify({ token }), this.register.name);
     const doc = await this.service.register(token);
-    if (isUndefined(doc)) {
+    if (isNull(doc)) {
       return {
         code: -1,
-        msg: '添加失败',
+        msg: '添加失败, 可能是服务器的问题',
         doc,
       };
     }

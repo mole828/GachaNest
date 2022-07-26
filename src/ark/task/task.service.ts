@@ -11,7 +11,7 @@ export class GachaUpdateService {
   constructor(private readonly service: GachaService) {
     Logger.log('constructor', this.constructor.name);
   }
-  @Cron('0 */20 * * * *')
+  @Cron('0 */40 * * * *')
   async update() {
     try {
       const doctors = await this.service.doctors();
