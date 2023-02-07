@@ -4,6 +4,7 @@ import { isNull } from 'lodash';
 import { Model } from 'mongoose';
 import ArkHypergryphCom from './ak.hypergryph.com';
 import {
+  Char,
   Doctor,
   DoctorDocument,
   Gacha,
@@ -11,6 +12,53 @@ import {
 } from './schemas/ark.schema';
 
 const pageSize = 10;
+
+function defaultDict<T>(createValue: (key?: string | symbol) => T): {
+  [key: string | symbol]: T;
+} {
+  const obj = new Proxy(Object.create({}), {
+    get(storage, property): T {
+      if (!(property in storage)) storage[property] = createValue(property);
+      return storage[property];
+    },
+  });
+  Object.defineProperties(obj, {
+    toJSON: {
+      enumerable: false,
+    },
+    subscribe: {
+      enumerable: false,
+    },
+    then: {
+      enumerable: false,
+    },
+  });
+  return obj;
+}
+
+class Analyst<T> {
+  counter = defaultDict(() => 0);
+  constructor(private readonly key: keyof T) {
+    Object.defineProperty(this, 'key', {
+      enumerable: false,
+    });
+  }
+  count(item: T) {
+    const key = item[this.key];
+    if (
+      key.constructor === String ||
+      key.constructor === Symbol ||
+      key.constructor === Number
+    ) {
+      this.counter[key] += 1;
+    } else {
+      Logger.log(JSON.stringify(item));
+    }
+  }
+  toJSON() {
+    return this.counter;
+  }
+}
 
 @Injectable()
 export class GachaService {
@@ -135,11 +183,20 @@ export class GachaService {
       user[char.rarity] += 1;
     }
   }
+  // new analyst
+  analyst = defaultDict(() => defaultDict(() => new Analyst<Char>('rarity')));
+  async analys(gacha: Gacha) {
+    for (const char of gacha.chars) {
+      this.analyst[''][gacha.pool].count(char);
+      this.analyst[gacha.uid][gacha.pool].count(char);
+    }
+  }
   private async initStatistics() {
     const cur = this.gachaModel.find({}).cursor();
     let gacha = await cur.next();
     while (!isNull(gacha)) {
       this.statisticOne(gacha);
+      this.analys(gacha);
       gacha = await cur.next();
     }
     Logger.log(JSON.stringify(await this.statistic('')), 'initStatistics');

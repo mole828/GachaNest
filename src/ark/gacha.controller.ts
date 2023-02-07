@@ -61,6 +61,10 @@ export class GachaController {
   async doctors() {
     return this.service.doctors({ token: 0 });
   }
+  @Get('list.pool')
+  async pools(@Query('uid') uid: string) {
+    return [];
+  }
   @Get('gacha')
   async gacha(@Query('page') page: number, @Query('uid') uid: string) {
     let query = {};
@@ -90,6 +94,15 @@ export class GachaController {
       sum: sum(Object.values(rar)),
       rar,
     };
+  }
+  @Get('analyst')
+  analyst(
+    @Query('uid') uid = '',
+    @Query('pool') pool: string | undefined = undefined,
+  ) {
+    let obj = this.service.analyst[uid] as object;
+    if (pool) obj = obj[pool];
+    return obj;
   }
   @Get('doc.invalid')
   async invalid() {

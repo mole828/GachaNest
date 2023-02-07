@@ -1,9 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="nest" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
+  <configuration default="false" name="nest" type="docker-deploy" factoryName="dockerfile" server-name="www.moles.top">
     <deployment type="dockerfile">
       <settings>
+        <option name="imageTag" value="nest:last" />
         <option name="containerName" value="nest" />
-        <option name="commandLineOptions" value="-net host -e TZ=Asia/Shanghai" />
+        <option name="commandLineOptions" value="-e TZ=Asia/Shanghai -net host" />
         <option name="sourceFilePath" value="Dockerfile" />
       </settings>
     </deployment>
